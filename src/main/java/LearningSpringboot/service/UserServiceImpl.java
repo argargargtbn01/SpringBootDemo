@@ -1,8 +1,11 @@
 package LearningSpringboot.service;
 
 import LearningSpringboot.entity.User;
+import LearningSpringboot.exception.NotFoundException;
 import LearningSpringboot.model.dto.UserDto;
 import LearningSpringboot.model.mapper.UserMapper;
+import LearningSpringboot.repository.UserRepository;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
@@ -10,16 +13,13 @@ import java.util.List;
 
 @Component
 public class UserServiceImpl implements UserService {
-    private static ArrayList<User> users = new ArrayList<User>();
-
-    static {
-        users.add(new User(1, "1", "1", "1", "1", "1"));
-        users.add(new User(2, "2", "2", "2", "2", "2"));
-    }
+    @Autowired
+    private UserRepository userRepo;
 
     @Override
     public List<UserDto> getListUser() {
-        List<UserDto> result = new ArrayList<UserDto>();
+        List<UserDto> result = new ArrayList<>();
+        List<User> users = userRepo.findAll();
         for (User user : users) {
             result.add(UserMapper.toUserDto(user));
         }
@@ -27,48 +27,33 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public UserDto getUserById(int id) {
-        for (User user : users) {
-            if (user.getId() == id) {
-                return UserMapper.toUserDto(user);
-            }
-        }
-        return null;
-    }
-
-    @Override
-    public UserDto getUserByName(String name) {
-        for (User user: users){
-            if (user.getName().contains(name)){
-                return UserMapper.toUserDto(user);
-            }
-        }
-        return null;
+    public UserDto getUserById(long id) {
+        User user = userRepo.findById(id).orElseThrow(() -> new NotFoundException("not found"));
+        return UserMapper.toUserDto(user);
     }
 
     @Override
     public UserDto createUser(User user) {
-        int size = users.size();
-        User newUser = new User(size+1, user.getName(),user.getEmail(),user.getPhone(),user.getAvatar(),user.getPassword());
-        users.add(newUser);
-        UserDto newUserDto = UserMapper.toUserDto(newUser);
-        return newUserDto;
+        userRepo.save(user);
+        return UserMapper.toUserDto(user);
     }
 
     @Override
-    public UserDto updateUser(int id, User user) {
-        User newUser = new User(id, user.getName(),user.getEmail(),user.getPhone(),user.getAvatar(),user.getPassword());
-        users.set(id-1,newUser);
-        UserDto updateUserDto = UserMapper.toUserDto(newUser);
-        return updateUserDto;
+    public UserDto updateUser(long id, User user) {
+        User updatedUser = userRepo.findById(id).orElseThrow(() -> new NotFoundException("not found"));
+        updatedUser.setId(id);
+        updatedUser.setName(user.getName());
+        updatedUser.setEmail(user.getEmail());
+        updatedUser.setPhone(user.getPhone());
+        updatedUser.setAvatar(user.getAvatar());
+        updatedUser.setPassword(user.getPassword());
+        userRepo.save(updatedUser);
+        return UserMapper.toUserDto(updatedUser);
     }
 
     @Override
-    public boolean deleteUser(int id) {
-        User deleteUser =users.remove(id-1);
-        if (deleteUser != null){
-            return true;
-        }
-        return false;
+    public boolean deleteUser(long id) {
+        userRepo.deleteById(id);
+        return true;
     }
 }

@@ -13,6 +13,4 @@ public class UserMapper {
         tmp.setAvatar(user.getAvatar());
         return tmp;
     }
-
-
 }
